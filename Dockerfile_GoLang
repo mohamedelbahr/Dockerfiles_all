@@ -1,0 +1,21 @@
+FROM golang:1.14 as build-env
+MAINTAINER mohamedgaberelbahr@gmail.com
+
+RUN mkdir /app
+WORKDIR /app
+
+COPY go.mod .
+COPY go.sum .
+RUN go mod download
+
+COPY . .
+
+#### Building the binary
+RUN CGO_ENABLED=0 go build -ldflags "-s -w" -o /app/run
+
+### Build final minimal image
+FROM buildpack-deps:buster-scm
+EXPOSE ${APP_PORT}       # Define your desired port here
+COPY --from=build-env /app/run /app/run
+WORKDIR /app
+ENTRYPOINT ["./run"]
